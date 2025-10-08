@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三角函数可视化 y = A sin(ωx + φ)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 1000px;
+            width: 100%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .formula {
+            text-align: center;
+            font-size: 28px;
+            color: #667eea;
+            margin-bottom: 30px;
+            font-weight: 600;
+            padding: 15px;
+            background: #f0f4ff;
+            border-radius: 12px;
+            border: 2px solid #667eea;
+        }
+        
+        .param-value {
+            color: #764ba2;
+            font-weight: bold;
+            font-size: 30px;
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            background: #fafafa;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 25px;
+        }
+        
+        .control-group {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            transition: transform 0.2s;
+        }
+        
+        .control-group:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .param-name {
+            color: #667eea;
+            font-size: 20px;
+            font-style: italic;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #d3d3d3;
+            outline: none;
+            margin-bottom: 10px;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #764ba2;
+            transform: scale(1.2);
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .value-display {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #764ba2;
+        }
+        
+        .description {
+            font-size: 12px;
+            color: #666;
+            margin-top: 8px;
+            text-align: center;
+        }
+        
+        .reset-btn {
+            display: block;
+            margin: 20px auto 0;
+            padding: 12px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        
+        .reset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>三角函数可视化工具</h1>
+        <div class="formula">
+            y = <span class="param-value" id="formulaA">1.0</span> sin(<span class="param-value" id="formulaOmega">1.0</span>x + <span class="param-value" id="formulaPhi">0.00</span>)
+        </div>
+        
+        <canvas id="canvas" width="900" height="400"></canvas>
+        
+        <div style="text-align: center; margin-bottom: 20px;">
+            <span style="color: #cccccc; font-weight: bold;">━━━</span> 
+            <span style="color: #666; margin-right: 20px;">y = sin(x) (原函数)</span>
+            <span style="color: #667eea; font-weight: bold;">━━━</span> 
+            <span style="color: #667eea;">y = A sin(ωx + φ) (变换后)</span>
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label><span class="param-name">A</span> (振幅)</label>
+                <input type="range" id="amplitude" min="-5" max="5" step="0.1" value="1">
+                <div class="value-display" id="ampValue">1.0</div>
+                <div class="description">控制波形的高度</div>
+            </div>
+            
+            <div class="control-group">
+                <label><span class="param-name">ω</span> (角频率)</label>
+                <input type="range" id="omega" min="-5" max="5" step="0.1" value="1">
+                <div class="value-display" id="omegaValue">1.0</div>
+                <div class="description">控制波形的周期</div>
+            </div>
+            
+            <div class="control-group">
+                <label><span class="param-name">φ</span> (初始相位)</label>
+                <input type="range" id="phase" min="-6.28" max="6.28" step="0.01" value="0">
+                <div class="value-display" id="phaseValue">0.00</div>
+                <div class="description">控制波形的水平偏移</div>
+            </div>
+        </div>
+        
+        <button class="reset-btn" onclick="resetValues()">重置参数</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        const ampSlider = document.getElementById('amplitude');
+        const omegaSlider = document.getElementById('omega');
+        const phaseSlider = document.getElementById('phase');
+        
+        const ampValue = document.getElementById('ampValue');
+        const omegaValue = document.getElementById('omegaValue');
+        const phaseValue = document.getElementById('phaseValue');
+        
+        let A = 1.0;
+        let omega = 1.0;
+        let phi = 0.0;
+        
+        function drawGrid() {
+            ctx.strokeStyle = '#e0e0e0';
+            ctx.lineWidth = 1;
+            
+            // 垂直网格线
+            for (let x = 0; x <= canvas.width; x += 30) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            
+            // 水平网格线
+            for (let y = 0; y <= canvas.height; y += 30) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+        }
+        
+        function drawAxes() {
+            const centerY = canvas.height / 2;
+            const centerX = canvas.width / 2;
+            
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            
+            // X轴
+            ctx.beginPath();
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(canvas.width, centerY);
+            ctx.stroke();
+            
+            // Y轴
+            ctx.beginPath();
+            ctx.moveTo(centerX, 0);
+            ctx.lineTo(centerX, canvas.height);
+            ctx.stroke();
+            
+            // 绘制刻度
+            ctx.fillStyle = '#666';
+            ctx.font = '12px Arial';
+            
+            // X轴刻度
+            for (let i = -3; i <= 3; i++) {
+                if (i === 0) continue;
+                const x = centerX + i * 100;
+                ctx.fillText(i + 'π', x - 10, centerY + 20);
+            }
+            
+            // Y轴刻度
+            for (let i = -3; i <= 3; i++) {
+                if (i === 0) continue;
+                const y = centerY - i * 50;
+                ctx.fillText(i, centerX + 10, y + 5);
+            }
+        }
+        
+        function drawOriginalSine() {
+            const centerY = canvas.height / 2;
+            const centerX = canvas.width / 2;
+            const scale = 100 / Math.PI; // 100像素 = π
+            
+            // 绘制原函数 y = sin(x)
+            ctx.strokeStyle = '#cccccc';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]); // 虚线
+            ctx.beginPath();
+            
+            let started = false;
+            
+            for (let px = 0; px < canvas.width; px++) {
+                const x = (px - centerX) / scale;
+                const y = Math.sin(x);
+                const py = centerY - y * 50;
+                
+                if (!started) {
+                    ctx.moveTo(px, py);
+                    started = true;
+                } else {
+                    ctx.lineTo(px, py);
+                }
+            }
+            
+            ctx.stroke();
+            ctx.setLineDash([]); // 恢复实线
+        }
+        
+        function drawSineWave() {
+            const centerY = canvas.height / 2;
+            const centerX = canvas.width / 2;
+            const scale = 100 / Math.PI; // 100像素 = π
+            
+            ctx.strokeStyle = '#667eea';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            
+            let started = false;
+            
+            for (let px = 0; px < canvas.width; px++) {
+                const x = (px - centerX) / scale;
+                const y = A * Math.sin(omega * x + phi);
+                const py = centerY - y * 50;
+                
+                if (!started) {
+                    ctx.moveTo(px, py);
+                    started = true;
+                } else {
+                    ctx.lineTo(px, py);
+                }
+            }
+            
+            ctx.stroke();
+            
+            // 绘制关键点
+            ctx.fillStyle = '#764ba2';
+            for (let i = -3; i <= 3; i++) {
+                const x = i * Math.PI;
+                const px = centerX + x * scale;
+                const y = A * Math.sin(omega * x + phi);
+                const py = centerY - y * 50;
+                
+                ctx.beginPath();
+                ctx.arc(px, py, 5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGrid();
+            drawAxes();
+            drawOriginalSine(); // 先绘制原函数作为参考
+            drawSineWave(); // 再绘制变换后的函数
+        }
+        
+        function updateValues() {
+            A = parseFloat(ampSlider.value);
+            omega = parseFloat(omegaSlider.value);
+            phi = parseFloat(phaseSlider.value);
+            
+            ampValue.textContent = A.toFixed(1);
+            omegaValue.textContent = omega.toFixed(1);
+            phaseValue.textContent = phi.toFixed(2);
+            
+            // 更新公式中的参数显示
+            document.getElementById('formulaA').textContent = A.toFixed(1);
+            document.getElementById('formulaOmega').textContent = omega.toFixed(1);
+            document.getElementById('formulaPhi').textContent = phi.toFixed(2);
+            
+            draw();
+        }
+        
+        function resetValues() {
+            ampSlider.value = 1.0;
+            omegaSlider.value = 1.0;
+            phaseSlider.value = 0.0;
+            updateValues();
+        }
+        
+        ampSlider.addEventListener('input', updateValues);
+        omegaSlider.addEventListener('input', updateValues);
+        phaseSlider.addEventListener('input', updateValues);
+        
+        // 初始绘制
+        updateValues();
+    </script>
+</body>
+</html>
